@@ -44,10 +44,13 @@ pip install -r requirements.txt
   │   └── ...
   ```
 
+まず，README_proto.mdを参照して，Flickr8kからdata/audioを作成(これはaudioとimageの埋め込みを一致させるために使用)．
+今回は疑似的にこれをそのままコピーして音素発見にも使用．
+
 ### **A-2. モデル選定**
 
 * 多言語で事前学習された大規模音声モデルを利用します。これにより、ゼロからの学習を避け、効率的にターゲット言語に適応できます。  
-* **推奨モデル**: facebook/wav2vec2-xls-r-base
+* **推奨モデル**: facebook/wav2vec2-base
 
 ### **A-3. 教師なしファインチューニング**
 
@@ -55,13 +58,13 @@ Wav2Vec2の基本アーキテクチャを、ターゲット言語の音声デー
 
 * **スクリプト**: `src/finetune_aud.py` を作成。  
 * **主な機能**:  
-  * transformersライブラリを使用し、facebook/wav2vec2-xls-r-baseをロード。  
+  * transformersライブラリを使用し、facebook/wav2vec2-baseをロード。  
   * `data/target_lang_unlabeled/` から音声データを読み込み、モデルの事前学習タスク（対照損失）を継続して実行。  
   * ファインチューニング済みのベースモデルを `models/aud_base_model/` に保存。  
 * **実行コマンド (CLI向け)**:  
   ```bash
   python src/finetune_aud.py \
-    --base_model "facebook/wav2vec2-xls-r-base" \
+    --base_model "facebook/wav2vec2-base" \
     --data_dir "data/target_lang_unlabeled/" \
     --output_dir "models/aud_base_model/" \
     --num_train_epochs 10 \

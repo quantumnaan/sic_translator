@@ -10,10 +10,9 @@ os.makedirs(audio_dir, exist_ok=True)
 
 # キャプションデータの読み込み
 df = pd.read_csv("data/captions.txt")
-df = df.head(100)
 
 # 各キャプションから音声を生成
-print("Generating audio files from captions (first 100)...")
+print("Generating audio files from captions...")
 for index, row in tqdm(df.iterrows(), total=df.shape[0]):
     image_id = row['image']
     caption = row['caption']
