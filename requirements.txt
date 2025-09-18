@@ -1,0 +1,26 @@
+# torch-cpu: CPUベースでの開発のため、torchはCPU版を明示的に指定します
+torch
+torchvision
+torchaudio
+
+# ML / DL Framework & Tools
+transformers
+datasets
+optuna
+scikit-learn
+
+# Data Handling & Utilities
+pandas
+numpy
+Pillow
+librosa
+tqdm
+
+# Text-to-Speech for data simulation
+gTTS
+
+fairseq # 大規模音声モデルの学習に有用  
+accelerate # 分散学習や大規模モデルの管理を容易にする  
+wandb # (任意)学習経過の可視化とロギング
+
+torchcodec
