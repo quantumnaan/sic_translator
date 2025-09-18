@@ -6,7 +6,7 @@
 
 ## **1. プロジェクト概要**
 
-本プロジェクトは、[プロトタイプ版](https://www.google.com/search?q=%23)で検証したマルチモーダル学習のコンセプトを拡張し、テキストデータが存在しない未知の言語（以下、ターゲット言語）の生音声から英語への翻訳を可能にする、エンドツーエンドのシステムを構築することを目的とします。
+本プロジェクトは、プロトタイプ版で検証したマルチモーダル学習のコンセプトを拡張し、テキストデータが存在しない未知の言語（以下、ターゲット言語）の生音声から英語への翻訳を可能にする、エンドツーエンドのシステムを構築することを目的とします。
 
 開発は以下の3つの主要フェーズで構成されます。
 
@@ -19,22 +19,12 @@
 
 ## **2. 開発環境の構築**
 
-プロトタイプ版のrequirements.txtに、大規模モデルの学習をサポートするライブラリを追加します。
-
-```plaintext
-# requirements.txt  
-# (プロトタイプ版のライブラリに以下を追加)  
-fairseq # 大規模音声モデルの学習に有用  
-accelerate # 分散学習や大規模モデルの管理を容易にする  
-wandb # (任意)学習経過の可視化とロギング
-```
-
 **セットアップコマンド:**
 
 ```bash
 # 仮想環境を作成・有効化  
-python -m venv venv_full  
-source venv_full/bin/activate
+python -m venv venv
+source venv/bin/activate
 
 # ライブラリのインストール  
 pip install -r requirements.txt
@@ -61,7 +51,7 @@ pip install -r requirements.txt
 ### **A-2. モデル選定**
 
 * 多言語で事前学習された大規模音声モデルを利用します。これにより、ゼロからの学習を避け、効率的にターゲット言語に適応できます。  
-* **推奨モデル**: facebook/wav2vec2-xls-r-300m (Hugging Face Model Hub)
+* **推奨モデル**: facebook/wav2vec2-xls-r-base
 
 ### **A-3. 教師なしファインチューニング**
 
@@ -69,13 +59,13 @@ Wav2Vec2の基本アーキテクチャを、ターゲット言語の音声デー
 
 * **スクリプト**: `src/finetune_aud.py` を作成。  
 * **主な機能**:  
-  * transformersライブラリを使用し、facebook/wav2vec2-xls-r-300mをロード。  
+  * transformersライブラリを使用し、facebook/wav2vec2-xls-r-baseをロード。  
   * `data/target_lang_unlabeled/` から音声データを読み込み、モデルの事前学習タスク（対照損失）を継続して実行。  
   * ファインチューニング済みのベースモデルを `models/aud_base_model/` に保存。  
 * **実行コマンド (CLI向け)**:  
   ```bash
   python src/finetune_aud.py \
-    --base_model "facebook/wav2vec2-xls-r-300m" \
+    --base_model "facebook/wav2vec2-xls-r-base" \
     --data_dir "data/target_lang_unlabeled/" \
     --output_dir "models/aud_base_model/" \
     --num_train_epochs 10 \
