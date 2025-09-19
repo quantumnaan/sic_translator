@@ -1,0 +1,7 @@
+{
+  "lr": 6.960731259814541e-05,
+  "embedding_dim": 256,
+  "batch_size": 8,
+  "temperature": 0.0918952553631394,
+  "audio_encoder_layers": 3
+}

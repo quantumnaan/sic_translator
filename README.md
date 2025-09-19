@@ -177,3 +177,48 @@ Wav2Vec2の基本アーキテクチャを、ターゲット言語の音声デー
 ├── README.md
 └── requirements.txt
 ```
+## デモ: 音声 -> 画像 検索 (audio-to-image retrieval)
+
+以下は `src/demo_aud2img.py` の説明です。これはフェーズA/フェーズBで学習したモデルを使い、入力音声に最も近い画像をギャラリーから検索して表示するデモプログラムです。
+
+主な機能
+- フェーズA の音響ベースモデルで波形から音響特徴を抽出し、事前に学習した k-means コードブックで離散化します。
+- フェーズB（semantic core）で音響単位系列を意味ベクトルに変換します。
+- 画像ギャラリーの各画像を画像エンコーダでベクトル化してインデックス化し、クエリ音声とのコサイン類似度で近い画像を返します。
+
+使い方（例）
+``bash
+python src/demo_aud2img.py \
+  --acoustic_model_path models/acoustic_unit_model/ \
+  --model_dir models/semantic_core_model/ \
+  --image_gallery_dir data/multimodal_pairs/images/ \
+  --query_audio_file data/demo/audio/10815824_2997e03d76.wav \
+  --top_k 5
+```
+
+主要な引数
+- `--acoustic_model_path`: フェーズA の出力ディレクトリ（kmeans コードブック等が存在する）
+- `--model_dir` / `--semantic_model_path`: フェーズB の学習済みモデルディレクトリ／重みパス（`semantic_core_model.pth` や `best_params.json` が必要）
+- `--image_gallery_dir`: 検索対象の画像フォルダ
+- `--query_audio_file`: 検索に使うクエリ音声ファイル（wav）
+- `--top_k`: 返す上位 k 件
+
+出力と挙動
+- 実行すると、まず画像ギャラリーのベクトル化結果を `image_index.pt`（semantic モデルの場所）に保存またはロードします。
+- クエリ音声はフェーズA→kmeans→フェーズB の順で意味ベクトル化され、画像ベクトルとコサイン類似度で比較されます。
+- 上位 k 件の画像と類似度スコアを標準出力に表示し、画像を matplotlib で並べて表示します。
+
+依存関係 / 前提
+- PyTorch / torchaudio / torchvision
+- 学習済みのフェーズA（`models/acoustic_unit_model/`）とフェーズB（`models/semantic_core_model/semantic_core_model.pth`）
+- `joblib`（kmeans のロード用）
+- 画像前処理関数（リポジトリ内の `dataloader.get_transforms()` など）
+
+注意事項
+- モデルのロードや画像インデックス作成は GPU が使えると高速ですが、CPU でも動作します（ただし時間がかかる）。
+- `image_index.pt` は semantic モデルのディレクトリに保存されます。モデル構成を変えた場合は再作成してください。
+- 音声・画像モデルはリポジトリに大きなバイナリを置かない運用（Hugging Face / S3）を推奨します。
+
+トラブルシュート
+- モデル読み込みで Unauthorized / 401 が出る場合は Hugging Face トークンを環境変数 `HUGGINGFACE_HUB_TOKEN` にセットするか、ローカルにモデルを配置してください。
+- メモリ不足で落ちる場合は小さいモデルを使う、あるいはバッチサイズ／worker 数を下げて実行してください。

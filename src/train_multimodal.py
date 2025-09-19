@@ -185,8 +185,16 @@ if __name__ == "__main__":
     trial = study.best_trial
     print(f"  Validation Loss: {trial.value}")
     print("  Best Hyperparameters: ")
-    for key, value in trial.params.items():
+    best_params = trial.params
+    for key, value in best_params.items():
         print(f"    {key}: {value}")
+        
+        
+    params_path = os.path.join(os.path.dirname(BEST_MODEL_PATH), "best_params.json")
+    os.makedirs(os.path.dirname(params_path), exist_ok=True)
+    with open(params_path, 'w') as f:
+        json.dump(best_params, f, indent=2)
+    print(f"\nBest parameters saved to {params_path}")
 
     # 最適なパラメータで最終モデルを学習し保存
     train_and_save_best_model(study.best_params) # ← 本格的な学習を行う場合はこの行のコメントを外す
