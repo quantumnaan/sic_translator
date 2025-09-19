@@ -26,10 +26,11 @@ from tqdm import tqdm
 
 import torch
 import torchaudio
-from transformers import Wav2Vec2Model
 import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 import joblib
+from transformers import Wav2Vec2Model, Wav2Vec2FeatureExtractor # 💥 FeatureExtractorをインポート
+
 
 def get_args():
     """コマンドライン引数を解析する"""
@@ -99,8 +100,9 @@ def main():
     print(f"Using device: {device}")
     
     # 1. ファインチューニング済みのベースモデルをロード
-    print(f"Loading base model from {args.base_model_path}...")
+    print(f"Loading base model and feature extractor from {args.base_model_path}...")
     base_model = Wav2Vec2Model.from_pretrained(args.base_model_path)
+    feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(args.base_model_path) # 💥【追加】
     
     # 2. 特徴量を抽出
     feature_vectors = extract_features(
@@ -133,6 +135,7 @@ def main():
     # ベースモデルとコードブック（K-Meansのクラスタ中心）を別々に保存する。
     # 推論時にこれらを組み合わせて使用する。
     base_model.save_pretrained(args.output_dir)
+    feature_extractor.save_pretrained(args.output_dir) # 💥【追加】
     print(f"Final base model saved to {args.output_dir}")
     print("\n--- Training VQ Layer Complete ---")
     print(f"The final acoustic unit model consists of two parts:")

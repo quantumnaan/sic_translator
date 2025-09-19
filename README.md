@@ -143,11 +143,15 @@ Wav2Vec2の基本アーキテクチャを、ターゲット言語の音声デー
 * **実行コマンド**:  
   ```bash
   python src/finetune_translator.py \
-    --acoustic_model_path "models/acoustic_unit_model/" \
-    --semantic_model_path "models/semantic_core_model/" \
-    --parallel_data_dir "data/parallel_data/" \
-    --output_dir "models/final_translator_model/" \
-    --learning_rate 3e-6
+  --acoustic_model_path "models/acoustic_unit_model/" \
+  --semantic_model_path "models/semantic_core_model/semantic_core_model.pth" \
+  --params_path "models/semantic_core_model/best_params.json" \
+  --parallel_data_dir "data/parallel_pairs/" \
+  --output_dir "models/final_translator_model/" \
+  --decoder_model_name "facebook/bart-base" \
+  --num_train_epochs 10 \
+  --per_device_train_batch_size 4 \
+  --learning_rate 5e-5
   ```
 
 【フェーズCの成果物】: `models/final_translator_model/`  
@@ -187,12 +191,12 @@ Wav2Vec2の基本アーキテクチャを、ターゲット言語の音声デー
 - 画像ギャラリーの各画像を画像エンコーダでベクトル化してインデックス化し、クエリ音声とのコサイン類似度で近い画像を返します。
 
 使い方（例）
-``bash
+```bash
 python src/demo_aud2img.py \
   --acoustic_model_path models/acoustic_unit_model/ \
   --model_dir models/semantic_core_model/ \
-  --image_gallery_dir data/multimodal_pairs/images/ \
-  --query_audio_file data/demo/audio/10815824_2997e03d76.wav \
+  --image_gallery_dir data/images/ \
+  --query_audio_file data/audio/10815824_2997e03d76.wav \
   --top_k 5
 ```
 
@@ -222,3 +226,10 @@ python src/demo_aud2img.py \
 トラブルシュート
 - モデル読み込みで Unauthorized / 401 が出る場合は Hugging Face トークンを環境変数 `HUGGINGFACE_HUB_TOKEN` にセットするか、ローカルにモデルを配置してください。
 - メモリ不足で落ちる場合は小さいモデルを使う、あるいはバッチサイズ／worker 数を下げて実行してください。
+
+## phase C 後のデモ
+```bash
+python src/demo_translator.py \
+  --model_path "models/final_translator_model/" \
+  --audio_file "data/audio/10815824_2997e03d76.wav"
+```

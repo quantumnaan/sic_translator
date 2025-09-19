@@ -170,8 +170,11 @@ def main():
     print("\n--- Pre-Training Complete ---")
 
     # Save base wav2vec2 encoder (w/o VQ head)
-    model.wav2vec2.save_pretrained(args.output_dir)
-    print(f"Fine-tuned base model saved to '{args.output_dir}'")
+    model.wav2vec2.save_pretrained(args.output_dir)    
+    feature_extractor.save_pretrained(args.output_dir)
+
+    print(f"Fine-tuned base model AND feature extractor saved to '{args.output_dir}'")
+    print("This model is now ready for the next step: train_vq.py")
 
 if __name__ == "__main__":
     main()
