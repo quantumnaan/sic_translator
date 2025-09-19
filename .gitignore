@@ -1,3 +1,6 @@
 __pycache__/
 data/archived_img
-ignore*
+ignore*models/acoustic_unit_model/*.safetensors
+models/acoustic_unit_model/*.safetensors
+models/aud_base_model/*.safetensors
+models/semantic_core_model/semantic_core_model.pth*
