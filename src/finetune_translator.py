@@ -10,6 +10,18 @@ finetune_translator.py (フェーズC)
 翻訳モデル全体をファインチューニングする。
 """
 
+import warnings
+from transformers.utils.logging import set_verbosity_error
+
+# 1. transformersライブラリ自体のワーニングを抑制
+# これにより、多くのtransformers関連のメッセージが非表示になります
+set_verbosity_error()
+
+# 2. その他のライブラリ（torchaudioなど）のワーニングを抑制
+# FutureWarningとUserWarningを無視するように設定
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+
 import argparse
 import os
 import glob
@@ -43,6 +55,27 @@ from model import AcousticUnitEncoder, MultimodalAcousticModel  # フェーズB�
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Union
+
+
+def get_args():
+    parser = argparse.ArgumentParser(
+        description="Fine-tune the full translation model.")
+    parser.add_argument("--acoustic_model_path", type=str, required=True)
+    parser.add_argument("--semantic_model_path", type=str, required=True)
+    parser.add_argument("--params_path", type=str, required=True)
+    parser.add_argument("--parallel_data_dir", type=str, required=True)
+    parser.add_argument("--output_dir", type=str, required=True)
+    parser.add_argument("--decoder_model_name", type=str,
+                        default="facebook/bart-base")
+    parser.add_argument("--num_train_epochs", type=int, default=10)
+    parser.add_argument("--per_device_train_batch_size", type=int, default=4)
+    parser.add_argument("--learning_rate", type=float, default=5e-5)
+    parser.add_argument(
+        "--resume_from_checkpoint",
+        action="store_true",
+        help="Resume training from the latest checkpoint in output_dir."
+    )
+    return parser.parse_args()
 
 
 @dataclass
@@ -89,23 +122,7 @@ class DataCollatorSpeechSeq2SeqWithPadding:
         return batch
 
 
-def get_args():
-    parser = argparse.ArgumentParser(
-        description="Fine-tune the full translation model.")
-    parser.add_argument("--acoustic_model_path", type=str, required=True)
-    parser.add_argument("--semantic_model_path", type=str, required=True)
-    parser.add_argument("--params_path", type=str, required=True)
-    parser.add_argument("--parallel_data_dir", type=str, required=True)
-    parser.add_argument("--output_dir", type=str, required=True)
-    parser.add_argument("--decoder_model_name", type=str,
-                        default="facebook/bart-base")
-    parser.add_argument("--num_train_epochs", type=int, default=10)
-    parser.add_argument("--per_device_train_batch_size", type=int, default=4)
-    parser.add_argument("--learning_rate", type=float, default=5e-5)
-    return parser.parse_args()
-
 # --- Encoder: 音声から意味表現へ ---
-
 
 class SpeechToMeaningEncoder(PreTrainedModel):
     # PreTrainedModelとの互換性のために、config_classを指定
@@ -161,7 +178,6 @@ class SpeechToMeaningEncoder(PreTrainedModel):
         for param in self.projection.parameters():
             param.requires_grad = True
 
-    @torch.no_grad()
     def forward(self, input_values=None, **kwargs):
         # 💥【最重要修正点】self.deviceに頼らず、入力テンソルからデバイスを取得する
         device = input_values.device
@@ -170,12 +186,12 @@ class SpeechToMeaningEncoder(PreTrainedModel):
         self.acoustic_base_model.to(device)
         self.semantic_encoder.to(device)
 
-        # 生音声 -> 特徴量ベクトル
-        features = self.acoustic_base_model(input_values).last_hidden_state
+        with torch.no_grad(): # acoustic_base_modelは凍結されているので、この部分は勾配計算不要
+            features = self.acoustic_base_model(input_values).last_hidden_state
 
         semantic_outputs = []
         for i in range(features.shape[0]):  # バッチ内の各サンプルを処理
-            feats_np = features[i].cpu().numpy()
+            feats_np = features[i].cpu().detach().numpy()
 
             # 特徴量 -> 音響単位系列
             units = self.kmeans_model.predict(feats_np)
@@ -283,6 +299,8 @@ def main(args):
     # 特殊トークンの設定
     model.config.decoder_start_token_id = tokenizer.bos_token_id
     model.config.pad_token_id = tokenizer.pad_token_id
+    
+    model.tie_weights()
 
     # 3. データセットとデータコレータを準備
     dataset = ParallelDataset(args.parallel_data_dir,
@@ -315,8 +333,9 @@ def main(args):
 
     # 5. ファインチューニング実行
     print("\n--- Starting Final Fine-tuning (Phase C) ---")
-    trainer.train()
+    trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
     print("\n--- Fine-tuning Complete ---")
+    
 
     # 6. 最終モデルの保存
     trainer.save_model(args.output_dir)

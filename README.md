@@ -231,5 +231,8 @@ python src/demo_aud2img.py \
 ```bash
 python src/demo_translator.py \
   --model_path "models/final_translator_model/" \
-  --audio_file "data/audio/10815824_2997e03d76.wav"
+  --audio_file "data/audio/1244306891_8e78ae1620.wav" \
+  --acoustic_model_path "models/acoustic_unit_model/" \
+  --semantic_model_path "models/semantic_core_model/semantic_core_model.pth" \
+  --params_path "models/semantic_core_model/best_params.json"
 ```
